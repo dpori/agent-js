@@ -1,4 +1,6 @@
-import init, { bls_init, bls_verify } from '../vendor/bls/bls';
+// import init, { bls_init, bls_verify } from '../vendor/bls/bls';
+
+import CTX from '../../core/javascript';
 
 export let verify: (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => boolean;
 
@@ -15,13 +17,17 @@ export async function blsVerify(
   msg: Uint8Array,
 ): Promise<boolean> {
   if (!verify) {
-    await init();
-    if (bls_init() !== 0) {
-      throw new Error('Cannot initialize BLS');
-    }
-    verify = (pk1, sig1, msg1) => {
-      // Reorder things from what the WASM expects (sig, m, w).
-      return bls_verify(sig1, msg1, pk1) === 0;
+    verify = (pk, sig, msg) => {
+      const ctx = new CTX.CTX('BLS12381');
+      const res = ctx.BLS.core_verify(sig, msg, pk); //ctx.BLS.asciitobytes(msg), pk);
+
+      if (res == 0) {
+        // console.log('Signature is OK');
+        return true;
+      } else {
+        // console.log('Signature is *NOT* OK');
+        return false;
+      }
     };
   }
   return verify(pk, sig, msg);
